@@ -27,3 +27,16 @@ Se mostrará un menú interactivo donde podrá:
 - Generar un resumen estadístico de las coincidencias encontradas.
 - Exportar los resultados detallados a un archivo HTML.
 
+## Pruebas
+
+El directorio `tests` contiene una versión simplificada del framework
+Catch2 y varios casos de prueba. Para compilarlos y ejecutarlos use:
+
+```bash
+g++ -std=c++17 PatternMatcher.cpp ui.cpp tests/test_cases.cpp \
+    tests/test_main.cpp -o tests/tests
+./tests/tests
+```
+
+Se mostrará un resumen indicando cuántas pruebas pasaron o fallaron.
+
