@@ -130,7 +130,8 @@ public:
     /**
      * Búsqueda mejorada con captura de contexto
      */
-    std::vector<MatchResult> search(const std::string& text) const {
+    std::vector<MatchResult> search(const std::string& text,
+                                    size_t context_size = 20) const {
         auto start_time = HighResClock::now();
         std::vector<MatchResult> matches;
         
@@ -163,7 +164,8 @@ public:
 
                 // Recolectar coincidencias con contexto
                 if (!current_node->pattern_indices.empty()) {
-                    collect_matches(current_node, matches, line_num + 1, col + 1, line, col);
+                    collect_matches(current_node, matches, line_num + 1, col + 1,
+                                    line, col, context_size);
                 }
             }
         }
@@ -209,10 +211,10 @@ private:
     /**
      * Recolecta coincidencias con información contextual
      */
-    void collect_matches(TrieNode* node, std::vector<MatchResult>& matches, 
-                        size_t line, size_t column, 
-                        const std::string& line_text, size_t pos) const {
-        const size_t context_size = 20; // Caracteres alrededor para el contexto
+    void collect_matches(TrieNode* node, std::vector<MatchResult>& matches,
+                        size_t line, size_t column,
+                        const std::string& line_text, size_t pos,
+                        size_t context_size) const {
         
         for (TrieNode* temp = node; temp != nullptr; temp = temp->output_link) {
             for (PatternID pattern_idx : temp->pattern_indices) {
@@ -482,6 +484,7 @@ void interactive_menu() {
     std::vector<std::string> patterns;
     std::string text;
     std::vector<ahocorasick::MatchResult> last_results;
+    size_t context_size = 20;
 
     auto print_status = [&]() {
         std::cout << "\n=== ESTADO ACTUAL ===\n";
@@ -489,6 +492,7 @@ void interactive_menu() {
         std::cout << "Sensibilidad a mayúsculas: " << (case_sensitive ? "ON" : "OFF") << "\n";
         std::cout << "Patrones cargados: " << matcher.patterns().size() << "\n";
         std::cout << "Tamaño del texto: " << text.size() << " caracteres\n";
+        std::cout << "Tamaño del contexto: " << context_size << " caracteres\n";
         std::cout << "Última búsqueda: " << last_results.size() << " coincidencias\n\n";
     };
 
@@ -561,13 +565,20 @@ void interactive_menu() {
                 }
                 case 5: {
                     std::cout << "1. " << (verbose ? "Desactivar" : "Activar") << " modo verboso\n"
-                              << "2. " << (case_sensitive ? "Desactivar" : "Activar") 
+                              << "2. " << (case_sensitive ? "Desactivar" : "Activar")
                               << " sensibilidad a mayúsculas\n"
+                              << "3. Definir tamaño del contexto (actual: " << context_size << ")\n"
                               << "Opción: ";
                     int opt;
                     std::cin >> opt;
-                    if (opt == 1) verbose = !verbose;
-                    else if (opt == 2) case_sensitive = !case_sensitive;
+                    if (opt == 1) {
+                        verbose = !verbose;
+                    } else if (opt == 2) {
+                        case_sensitive = !case_sensitive;
+                    } else if (opt == 3) {
+                        std::cout << "Nuevo tamaño de contexto: ";
+                        std::cin >> context_size;
+                    }
                     matcher = ahocorasick::PatternMatcher(verbose, case_sensitive);
                     if (!patterns.empty()) matcher.initialize(patterns);
                     break;
@@ -577,7 +588,7 @@ void interactive_menu() {
                         std::cout << "Error: Debe cargar patrones y texto primero.\n";
                         break;
                     }
-                    last_results = matcher.search(text);
+                    last_results = matcher.search(text, context_size);
                     std::cout << "Búsqueda completada. " << last_results.size() 
                               << " coincidencias encontradas.\n";
                     break;
