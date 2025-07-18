@@ -31,7 +31,7 @@ inline int char_to_index(char c) {
     if (c == '-') return 27;
     if (c >= 'a' && c <= 'z') return c - 'a';
     if (c >= 'A' && c <= 'Z') return std::tolower(c) - 'a';
-    throw std::invalid_argument("Carácter no válido para el Trie: " + std::string(1, c));
+    return -1; // Carácter fuera del alfabeto admitido
 }
 
 /**
@@ -146,25 +146,24 @@ public:
             for (size_t col = 0; col < line.size(); ++col) {
                 char c = line[col];
                 
-                try {
-                    int idx = char_to_index(c);
-                    
-                    // Seguir enlaces de fallo
-                    while (current_node != root_.get() && !current_node->children[idx]) {
-                        current_node = current_node->failure_link;
-                    }
-
-                    if (current_node->children[idx]) {
-                        current_node = current_node->children[idx].get();
-                    }
-
-                    // Recolectar coincidencias con contexto
-                    if (!current_node->pattern_indices.empty()) {
-                        collect_matches(current_node, matches, line_num + 1, col + 1, line, col);
-                    }
-                } catch (const std::invalid_argument&) {
-                    // Continuar con el siguiente carácter si no es válido
+                int idx = char_to_index(c);
+                if (idx == -1) {
+                    // Carácter no admitido, se ignora
                     continue;
+                }
+
+                // Seguir enlaces de fallo
+                while (current_node != root_.get() && !current_node->children[idx]) {
+                    current_node = current_node->failure_link;
+                }
+
+                if (current_node->children[idx]) {
+                    current_node = current_node->children[idx].get();
+                }
+
+                // Recolectar coincidencias con contexto
+                if (!current_node->pattern_indices.empty()) {
+                    collect_matches(current_node, matches, line_num + 1, col + 1, line, col);
                 }
             }
         }
